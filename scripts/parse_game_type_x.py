@@ -13,6 +13,19 @@ import pandas as pd
 
 # Here comes your function definitions
 
+def parse_acting_players(data):
+    """parse the acting players (shot, assist, block) from the columns with player numbers"""
+    players_goalies = data.filter(regex=("^g?[0-9]+$"))
+    actions = pd.DataFrame('', index=players_goalies.index, columns=['shot', 'assist', 'block'])
+    for col in players_goalies:
+        player = players_goalies[col].astype(str)
+        nbr = col.replace('g', '')
+        actions['shot'][player.str.match('S')] = nbr
+        actions['assist'][player.str.match('A')] = nbr
+        actions['block'][player.str.match('B')] = nbr
+    print(actions)
+    print(actions.info())
+
 def parse_team(data):
     """parse the team (home/away) from two columns"""
     home_name = 'x'
@@ -61,6 +74,7 @@ def main():
 #    parse_time(data)
 #    parse_period(data)
 #    parse_team(data)
+#    parse_acting_players(data)
 
 #    data.to_pickle(datadir + filename + '.pkl.xz')
 
