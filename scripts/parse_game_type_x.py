@@ -13,6 +13,43 @@ import pandas as pd
 
 # Here comes your function definitions
 
+def parse_involved_players_for(data):
+    """parse the involved (on-field) players for"""
+    prefix = 'hm_'
+    players_goalies = data.filter(regex=("^g?[0-9]+$"))
+    numbers = pd.Series(list(players_goalies))
+    col = [prefix + str(i) for i in range(1, 7)]
+    players = pd.DataFrame('', index=players_goalies.index, columns=col)
+    for index, event in players_goalies.iterrows():
+        players_on = numbers[event.notna().values]
+        player_count = len(players_on)
+        if len(col) >= player_count:
+            players.iloc[index, 0:player_count] = players_on.values
+        else:
+            print('too many players, index : ', index)
+            print(players_on)
+    print(players)
+
+def parse_involved_players_against(data):
+    """parse the involved (on-field) players against"""
+    prefix = 'aw_'
+    suffix = '_against'
+    players_goalies = data[['players' + suffix, 'goalie' + suffix]]
+    default_number = '?'
+    col = [prefix + str(i) for i in range(1, 7)]
+    players = pd.DataFrame('', index=players_goalies.index, columns=col)
+    for index, event in players_goalies.iterrows():
+        players_on = \
+            ([default_number] * event.loc['players' + suffix]) + \
+            (['g' + default_number] * event.loc['goalie' + suffix])
+        player_count = len(players_on)
+        if len(col) >= player_count:
+            players.iloc[index, 0:player_count] = players_on
+        else:
+            print('too many players, index : ', index)
+            print(players_on)
+    print(players)
+
 def parse_acting_players(data):
     """parse the acting players (shot, assist, block) from the columns with player numbers"""
     players_goalies = data.filter(regex=("^g?[0-9]+$"))
@@ -64,7 +101,7 @@ def main():
     print('Argument List:', str(sys.argv))
 
     datadir = 'data/'
-    filename = 'R01'
+    filename = 'x'
     datafile = datadir + filename + '.csv'
     print(datafile)
 
@@ -75,6 +112,8 @@ def main():
 #    parse_period(data)
 #    parse_team(data)
 #    parse_acting_players(data)
+#    parse_involved_players_for(data)
+#    parse_involved_players_against(data)
 
 #    data.to_pickle(datadir + filename + '.pkl.xz')
 
