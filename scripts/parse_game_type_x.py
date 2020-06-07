@@ -5,6 +5,7 @@
 
 # Here comes your imports
 import sys
+import logging as log
 import pandas as pd
 
 # Here comes your (few) global variables
@@ -12,7 +13,6 @@ import pandas as pd
 # Here comes your class definitions
 
 # Here comes your function definitions
-
 def parse_pre_shot_situation(data):
     """parse the situation leading to the shot"""
     # (cycle / free-hit / develop / counter / turnover / rebound / penalty / others)
@@ -24,13 +24,14 @@ def parse_pre_shot_situation(data):
     shot_situations = data[situation_labels]
     shot_situations.columns = situation_categories
     situation_count = shot_situations.notna().sum(axis=1)
-    print('no pre shot situation:\n', shot_situations[situation_count < 1])
-    print('multiple pre shot situations:\n', shot_situations[situation_count > 1])
+    if (situation_count != 1).any():
+        log.warning('no pre shot situation:\n%s', shot_situations[situation_count < 1])
+        log.warning('multiple pre shot situations:\n%s', shot_situations[situation_count > 1])
     situation = pd.Categorical([''] * len(shot_situations.index), categories=situation_categories)
     for label, content in shot_situations.items():
         situation[content.notna()] = label
-    print(pd.Series(situation))
-    print(pd.Series(situation).value_counts())
+    log.debug(pd.Series(situation))
+    log.debug(pd.Series(situation).value_counts())
 
 def parse_shot_type(data):
     """parse the type of the shot"""
@@ -42,27 +43,30 @@ def parse_shot_type(data):
     shot_types = data[type_labels]
     shot_types.columns = type_categories
     type_count = shot_types.notna().sum(axis=1)
-    print('no shot type:\n', shot_types[type_count < 1])
-    print('multiple shot types:\n', shot_types[type_count > 1])
+    if (type_count != 1).any():
+        log.warning('no shot type:\n%s', shot_types[type_count < 1])
+        log.warning('multiple shot types:\n%s', shot_types[type_count > 1])
     shot_type = pd.Categorical([''] * len(shot_types.index), categories=type_categories)
     for label, content in shot_types.items():
         shot_type[content.notna()] = label
-    print(pd.Series(shot_type))
-    print(pd.Series(shot_type).value_counts())
+    log.debug(pd.Series(shot_type))
+    log.debug(pd.Series(shot_type).value_counts())
 
 def parse_shot_result(data):
     """parse the result (blocked / missed / on-goal / goal) of the event / shot"""
     result_categories = ['BL', 'MI', 'SOG', 'G']
     shot_results = data[result_categories]
-    print(shot_results.info())
+    log.debug(shot_results.info())
     result_count = shot_results.notna().sum(axis=1)
-    print('no shot result:\n', shot_results[result_count < 1])
-    print('multiple shot results:\n', shot_results[result_count > 1])
+    if (result_count < 1).any():
+        log.warning('no shot result:\n%s', shot_results[result_count < 1])
+    if (result_count > 1).any():
+        log.debug('multiple shot results:\n%s', shot_results[result_count > 1])
     result = pd.Categorical([''] * len(shot_results.index), categories=result_categories)
     for label, content in shot_results.items():
         result[content.notna()] = label
-    print(pd.Series(result))
-    print(pd.Series(result).value_counts())
+    log.debug(pd.Series(result))
+    log.debug(pd.Series(result).value_counts())
 
 def parse_involved_players_for(data):
     """parse the involved (on-field) players for"""
@@ -77,9 +81,9 @@ def parse_involved_players_for(data):
         if len(col) >= player_count:
             players.iloc[index, 0:player_count] = players_on.values
         else:
-            print('too many players, index : ', index)
-            print(players_on)
-    print(players)
+            log.warning('too many players, index : %d', index)
+            log.debug(players_on)
+    log.debug(players)
 
 def parse_involved_players_against(data):
     """parse the involved (on-field) players against"""
@@ -97,9 +101,9 @@ def parse_involved_players_against(data):
         if len(col) >= player_count:
             players.iloc[index, 0:player_count] = players_on
         else:
-            print('too many players, index : ', index)
-            print(players_on)
-    print(players)
+            log.warning('too many players, index : %d', index)
+            log.debug(players_on)
+    log.debug(players)
 
 def parse_acting_players(data):
     """parse the acting players (shot, assist, block) from the columns with player numbers"""
@@ -111,63 +115,65 @@ def parse_acting_players(data):
         actions['shot'][player.str.match('S')] = nbr
         actions['assist'][player.str.match('A')] = nbr
         actions['block'][player.str.match('B')] = nbr
-    print(actions)
-    print(actions.info())
+    log.debug(actions)
+    log.debug(actions.info())
 
 def parse_team(data):
     """parse the team (home/away) from two columns"""
     home_name = 'x'
     away_name = 'y'
     home_away = data[[home_name, away_name]]
-    print(home_away.info())
-    print(home_away.isnull().sum().sum() == len(home_away.index))
+    log.debug(home_away.info())
+    log.debug(home_away.isnull().sum().sum() == len(home_away.index))
     team = pd.Series([''] * len(home_away.index))
     team[home_away[home_name].isnull()] = 'away'
     team[home_away[away_name].isnull()] = 'home'
-    print(team)
+    log.debug(team)
 
 def parse_period(data):
     """parse the period int-string into int (OT => 4)"""
     period = data['period']
     period.replace('OT', '4', inplace=True)
-    print(period.astype(int))
+    log.debug(period.astype(int))
 
 def parse_time(data):
     """parse video time float-string into minutes and seconds"""
     time_as_str = data['time_vid'].astype(str)
     vd_m_s = time_as_str.str.split('.', expand=True)
     vd_m_s.set_axis(['vd_m', 'vd_s'], axis=1, inplace=True)
-    print(vd_m_s)
+    log.debug(vd_m_s)
 
     gm_m = data['time_game_m']
-    print(gm_m)
-    gm_m_nan = gm_m.head.isnull()
-    print(gm_m_nan)
+    log.debug(gm_m)
+#    gm_m_nan = gm_m.head.isnull()
+#    log.debug(gm_m_nan)
 #    blocks = (gm_m_nan.shift(1) != gm_m_nan).astype(int).cumsum()
 #    inds = pd.Series(gm_m_nan.index[gm_m_nan])
 
 def main():
     """Launcher."""
-    print('Number of arguments:', len(sys.argv), 'arguments.')
-    print('Argument List:', str(sys.argv))
+#    log.basicConfig(level=log.DEBUG)
+
+    log.debug('Number of arguments: %d arguments.', len(sys.argv))
+    log.debug('Argument List: %s', str(sys.argv))
 
     datadir = 'data/'
     filename = 'x'
     datafile = datadir + filename + '.csv'
-    print(datafile)
+    log.debug(datafile)
 
     data = pd.read_csv(datafile, quotechar="'")
-    print(data)
+    log.debug(data)
 
-#    parse_time(data)
-#    parse_period(data)
-#    parse_team(data)
-#    parse_acting_players(data)
-#    parse_involved_players_for(data)
-#    parse_involved_players_against(data)
-#    parse_shot_result(data)
-#    parse_shot_type(data)
-#    parse_pre_shot_situation(data)
+    parse_time(data)
+    parse_period(data)
+    parse_team(data)
+    parse_acting_players(data)
+    parse_involved_players_for(data)
+    parse_involved_players_against(data)
+    parse_shot_result(data)
+    parse_shot_type(data)
+    parse_pre_shot_situation(data)
 
 #    data.to_pickle(datadir + filename + '.pkl.xz')
 
