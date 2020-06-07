@@ -13,6 +13,20 @@ import pandas as pd
 
 # Here comes your function definitions
 
+def parse_shot_result(data):
+    """parse the result of the event / shot"""
+    result_categories = ['BL', 'MI', 'SOG', 'G']
+    shot_results = data[result_categories]
+    print(shot_results.info())
+    result_count = shot_results.notna().sum(axis=1)
+    print('no shot result:\n', shot_results[result_count < 1])
+    print('multiple shot results:\n', shot_results[result_count > 1])
+    result = pd.Categorical([''] * len(shot_results.index), categories=result_categories)
+    for label, content in shot_results.items():
+        result[content.notna()] = label
+    print(pd.Series(result))
+    print(pd.Series(result).value_counts())
+
 def parse_involved_players_for(data):
     """parse the involved (on-field) players for"""
     prefix = 'hm_'
@@ -114,6 +128,7 @@ def main():
 #    parse_acting_players(data)
 #    parse_involved_players_for(data)
 #    parse_involved_players_against(data)
+#    parse_shot_result(data)
 
 #    data.to_pickle(datadir + filename + '.pkl.xz')
 
