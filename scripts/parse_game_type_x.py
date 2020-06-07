@@ -13,8 +13,45 @@ import pandas as pd
 
 # Here comes your function definitions
 
+def parse_pre_shot_situation(data):
+    """parse the situation leading to the shot"""
+    # (cycle / free-hit / develop / counter / turnover / rebound / penalty / others)
+    situation_labels = \
+        ['Festsetzen', 'Freischlag', 'Auslösung', 'Konter', \
+         'Ballgewinn', 'Abpraller', 'Penalty', 'Sonstige']
+    situation_categories = \
+        ['CYC', 'FHT', 'DVL', 'CNT', 'TNV', 'RBD', 'PNT', 'OTH']
+    shot_situations = data[situation_labels]
+    shot_situations.columns = situation_categories
+    situation_count = shot_situations.notna().sum(axis=1)
+    print('no pre shot situation:\n', shot_situations[situation_count < 1])
+    print('multiple pre shot situations:\n', shot_situations[situation_count > 1])
+    situation = pd.Categorical([''] * len(shot_situations.index), categories=situation_categories)
+    for label, content in shot_situations.items():
+        situation[content.notna()] = label
+    print(pd.Series(situation))
+    print(pd.Series(situation).value_counts())
+
+def parse_shot_type(data):
+    """parse the type of the shot"""
+    # (wrist / chip / slap / backhand / one-timer / volley / tip / in-tight)
+    type_labels = \
+        ['Gezogen', 'Chip', 'Slapshot', 'Backhand', 'Direkt', 'Volley', 'Ablenker', 'InTight']
+    type_categories = \
+        ['WRS', 'CHP', 'SLP', 'BKH', 'ONT', 'VOL', 'TIP', 'INT']
+    shot_types = data[type_labels]
+    shot_types.columns = type_categories
+    type_count = shot_types.notna().sum(axis=1)
+    print('no shot type:\n', shot_types[type_count < 1])
+    print('multiple shot types:\n', shot_types[type_count > 1])
+    shot_type = pd.Categorical([''] * len(shot_types.index), categories=type_categories)
+    for label, content in shot_types.items():
+        shot_type[content.notna()] = label
+    print(pd.Series(shot_type))
+    print(pd.Series(shot_type).value_counts())
+
 def parse_shot_result(data):
-    """parse the result of the event / shot"""
+    """parse the result (blocked / missed / on-goal / goal) of the event / shot"""
     result_categories = ['BL', 'MI', 'SOG', 'G']
     shot_results = data[result_categories]
     print(shot_results.info())
@@ -129,6 +166,8 @@ def main():
 #    parse_involved_players_for(data)
 #    parse_involved_players_against(data)
 #    parse_shot_result(data)
+#    parse_shot_type(data)
+#    parse_pre_shot_situation(data)
 
 #    data.to_pickle(datadir + filename + '.pkl.xz')
 
