@@ -133,10 +133,12 @@ def parse_team(data, out):
     away_name = 'y'
     home_away = data[[home_name, away_name]]
     log.debug(home_away.info())
-    log.debug(home_away.isnull().sum().sum() == len(home_away.index))
-    team = pd.Series([''] * len(home_away.index))
-    team[home_away[home_name].isnull()] = 'away'
-    team[home_away[away_name].isnull()] = 'home'
+    team_count = home_away.notna().sum(axis=1)
+    if (team_count != 1).any():
+        log.warning('bad team data:\n%s', home_away[team_count != 1])
+    team = pd.Categorical([''] * len(home_away.index), categories=['home', 'away'])
+    team[home_away[home_name].notna()] = 'home'
+    team[home_away[away_name].notna()] = 'away'
     log.debug(team)
     out['team'] = team
 
