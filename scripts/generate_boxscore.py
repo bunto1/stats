@@ -16,6 +16,11 @@ import pandas as pd
 def get_player_and_goalie_count(players):
     """get count of players and goalies"""
     log.debug(players)
+#    log.debug(players.info())
+#    cleaned = players.replace('', np.NaN)
+#    print(cleaned.notna().sum(axis=1))
+#    print(cleaned.apply(lambda col: col.str.contains('g', na=False), axis=1).sum(axis=1))
+#    print(players.apply(lambda col: col.str.contains('^\d', regex=True, na=False), axis=1))
     return (5, 1)
 
 def get_strength(goals):
