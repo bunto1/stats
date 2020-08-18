@@ -16,12 +16,14 @@ import pandas as pd
 def get_player_and_goalie_count(players):
     """get count of players and goalies"""
     log.debug(players)
-#    log.debug(players.info())
-#    cleaned = players.replace('', np.NaN)
-#    print(cleaned.notna().sum(axis=1))
-#    print(cleaned.apply(lambda col: col.str.contains('g', na=False), axis=1).sum(axis=1))
-#    print(players.apply(lambda col: col.str.contains('^\d', regex=True, na=False), axis=1))
-    return (5, 1)
+    reg_p = r'^(\d+|\?)$'
+    reg_g = r'^(g\d+|g\?)$'
+    lam_p = lambda col: col.str.contains(reg_p, regex=True, na=False)
+    lam_g = lambda col: col.str.contains(reg_g, regex=True, na=False)
+    out = pd.DataFrame([], index=players.index)
+    out['players'] = players.apply(lam_p, axis=1).sum(axis=1)
+    out['goalies'] = players.apply(lam_g, axis=1).sum(axis=1)
+    return out
 
 def get_strength(goals):
     """get the strenght (even, pp, pk) from the goals data"""
